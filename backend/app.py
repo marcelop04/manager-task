@@ -12,7 +12,13 @@ def create_app():
     app = Flask(__name__)
     
     # Configuración
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    database_url = os.getenv('DATABASE_URL')
+    
+    # Usar pg8000 como driver de PostgreSQL
+    if database_url and database_url.startswith('postgresql://'):
+        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://')
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'pool_recycle': 300,
