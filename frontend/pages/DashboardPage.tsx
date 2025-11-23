@@ -22,15 +22,71 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔥 NUEVA FUNCIÓN: Calcular stats desde las tareas
+  const calculateStatsFromTasks = async (): Promise<TaskStats> => {
+    try {
+      const tasks = await taskService.getAllTasks();
+      const now = new Date();
+      const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+      const stats: TaskStats = {
+        total: tasks.length,
+        pending: tasks.filter((t) => t.status === "pending").length,
+        inProgress: tasks.filter((t) => t.status === "in-progress").length,
+        completed: tasks.filter((t) => t.status === "completed").length,
+        overdue: tasks.filter(
+          (t) => new Date(t.deadline) < now && t.status !== "completed"
+        ).length,
+        dueSoon: tasks.filter((t) => {
+          const deadline = new Date(t.deadline);
+          return (
+            deadline >= now &&
+            deadline <= twoDaysFromNow &&
+            t.status !== "completed"
+          );
+        }).length,
+        byPriority: {
+          low: tasks.filter((t) => t.priority === "low").length,
+          medium: tasks.filter((t) => t.priority === "medium").length,
+          high: tasks.filter((t) => t.priority === "high").length,
+        },
+        byCategory: Array.from(
+          new Set(tasks.map((t) => t.category).filter(Boolean))
+        ).map((category) => ({
+          category: category as string,
+          count: tasks.filter((t) => t.category === category).length,
+        })),
+      };
+
+      return stats;
+    } catch (err) {
+      throw new Error("Error calculando estadísticas");
+    }
+  };
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const data = await taskService.getStats();
-        setStats(data);
-      } catch (err) {
-        setError("Error al cargar las estadísticas");
+
+        // 🔥 INTENTAR PRIMERO EL ENDPOINT DE STATS
+        try {
+          const data = await taskService.getStats();
+          setStats(data);
+          setError(null);
+        } catch (statsError) {
+          // 🔥 SI FALLA, CALCULAR DESDE LAS TAREAS
+          console.warn("Stats endpoint failed, calculating from tasks...");
+          const calculatedStats = await calculateStatsFromTasks();
+          setStats(calculatedStats);
+          setError(null);
+        }
+      } catch (err: any) {
         console.error("Error fetching stats:", err);
+        setError(
+          "Error al cargar las estadísticas. Verifica la conexión con el backend."
+        );
+        setStats(null);
       } finally {
         setLoading(false);
       }
@@ -44,7 +100,19 @@ export const DashboardPage: React.FC = () => {
   }
 
   if (error) {
-    return <div className="error">{error}</div>;
+    return (
+      <div className="error">
+        {error}
+        <br />
+        <button
+          onClick={() => window.location.reload()}
+          className="btn btn-primary"
+          style={{ marginTop: "1rem" }}
+        >
+          Reintentar
+        </button>
+      </div>
+    );
   }
 
   if (!stats) {
@@ -146,19 +214,21 @@ export const DashboardPage: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="chart-container full-width">
-          <h3>Tareas por Categoría</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats.byCategory}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#82ca9d" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {stats.byCategory.length > 0 && (
+          <div className="chart-container full-width">
+            <h3>Tareas por Categoría</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.byCategory}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="category" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );
