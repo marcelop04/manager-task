@@ -12,6 +12,10 @@ export const Home: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [prefilledTaskData, setPrefilledTaskData] = useState<Omit<
+    Task,
+    "id" | "created_at"
+  > | null>(null);
 
   const handleCreateTask = async (
     taskData: Omit<Task, "id" | "created_at">
@@ -20,6 +24,7 @@ export const Home: React.FC = () => {
     try {
       await createTask(taskData);
       setShowForm(false);
+      setPrefilledTaskData(null);
     } finally {
       setFormLoading(false);
     }
@@ -34,19 +39,34 @@ export const Home: React.FC = () => {
     try {
       await updateTask(editingTask.id, taskData);
       setEditingTask(null);
+      setPrefilledTaskData(null);
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleVoiceConfirm = (title: string) => {
+  const handleVoiceConfirm = (voiceText: string) => {
     setShowVoiceModal(false);
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const formattedDate = tomorrow.toISOString().split("T")[0];
+
+    setPrefilledTaskData({
+      title: voiceText,
+      description: `Tarea creada por voz: "${voiceText}"`,
+      deadline: formattedDate,
+      priority: "medium",
+      category: "Voz",
+      status: "pending",
+    });
+
     setShowForm(true);
-    // Aquí podrías pre-llenar el formulario con el título
   };
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
+    setPrefilledTaskData(null);
   };
 
   const handleDeleteTask = async (id: number) => {
@@ -95,7 +115,6 @@ export const Home: React.FC = () => {
         </div>
       </div>
 
-      {/* Recordatorios */}
       {(overdueTasks.length > 0 || dueSoonTasks.length > 0) && (
         <div className="reminders-section">
           <h2>Recordatorios</h2>
@@ -134,7 +153,6 @@ export const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Todas las tareas */}
       <div className="all-tasks-section">
         <h2>Todas las Tareas ({tasks.length})</h2>
         {tasks.length === 0 ? (
@@ -161,17 +179,18 @@ export const Home: React.FC = () => {
         )}
       </div>
 
-      {/* Modal de Formulario */}
       {(showForm || editingTask) && (
         <div className="modal-overlay">
           <div className="modal">
             <h2>{editingTask ? "Editar Tarea" : "Nueva Tarea"}</h2>
             <TaskForm
               task={editingTask}
+              initialData={prefilledTaskData}
               onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
               onCancel={() => {
                 setShowForm(false);
                 setEditingTask(null);
+                setPrefilledTaskData(null);
               }}
               loading={formLoading}
             />
@@ -179,7 +198,6 @@ export const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Voz */}
       <VoiceTaskModal
         isOpen={showVoiceModal}
         onClose={() => setShowVoiceModal(false)}

@@ -14,7 +14,6 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
 }) => {
   const {
     transcript,
-    interimTranscript,
     isListening,
     startListening,
     stopListening,
@@ -32,12 +31,13 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
   };
 
   const handleAccept = () => {
-    if (transcript.trim()) {
-      onConfirm(transcript);
-      resetTranscript();
-      onClose();
+    const finalText = transcript.trim();
+    if (finalText) {
+      onConfirm(finalText);
     } else {
-      alert("Por favor, habla primero para crear una tarea");
+      alert(
+        "No se detectó ningún texto. Por favor, habla más claro o presiona '🎤 Comenzar a Grabar' nuevamente."
+      );
     }
   };
 
@@ -94,11 +94,6 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
             <label>Texto reconocido:</label>
             <div className="transcript">
               {transcript || "Aquí aparecerá tu tarea..."}
-              {interimTranscript && (
-                <span style={{ color: "#666", fontStyle: "italic" }}>
-                  {" " + interimTranscript}
-                </span>
-              )}
             </div>
           </div>
 
@@ -115,7 +110,6 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
             Cancelar
           </button>
 
-          {/* Botón principal que cambia entre Comenzar/Parar */}
           <button
             onClick={handleToggleListening}
             className={`btn ${isListening ? "btn-stop" : "btn-primary"}`}

@@ -3,6 +3,7 @@ import { Task } from "../types/Task";
 
 interface TaskFormProps {
   task?: Task | null;
+  initialData?: Omit<Task, "id" | "created_at"> | null;
   onSubmit: (taskData: Omit<Task, "id" | "created_at">) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
@@ -10,6 +11,7 @@ interface TaskFormProps {
 
 export const TaskForm: React.FC<TaskFormProps> = ({
   task,
+  initialData,
   onSubmit,
   onCancel,
   loading = false,
@@ -33,8 +35,23 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         category: task.category,
         status: task.status,
       });
+    } else if (initialData) {
+      setFormData(initialData);
+    } else {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const formattedDate = tomorrow.toISOString().split("T")[0];
+
+      setFormData({
+        title: "",
+        description: "",
+        deadline: formattedDate,
+        priority: "medium",
+        category: "",
+        status: "pending",
+      });
     }
-  }, [task]);
+  }, [task, initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

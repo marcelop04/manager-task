@@ -19,7 +19,6 @@ export const useSpeechRecognition = () => {
       return;
     }
 
-    // Detener cualquier reconocimiento previo
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
@@ -28,9 +27,8 @@ export const useSpeechRecognition = () => {
       window.SpeechRecognition || window.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
 
-    // CONFIGURACIÓN SIMPLIFICADA
-    recognitionRef.current.continuous = true; // ✅ Escucha continua
-    recognitionRef.current.interimResults = true; // ✅ Resultados en tiempo real
+    recognitionRef.current.continuous = true;
+    recognitionRef.current.interimResults = true;
     recognitionRef.current.lang = "es-ES";
 
     recognitionRef.current.onstart = () => {
@@ -52,13 +50,11 @@ export const useSpeechRecognition = () => {
         }
       }
 
-      // Acumular el texto
       if (finalTranscript) {
         setTranscript((prev) => prev + finalTranscript);
       } else if (interimTranscript) {
-        // Mostrar texto temporal mientras hablas
         setTranscript((prev) => {
-          const baseText = prev.replace(/\[.*?\]$/g, ""); // Remover texto temporal anterior
+          const baseText = prev.replace(/\[.*?\]$/g, "");
           return baseText + " [" + interimTranscript + "]";
         });
       }
@@ -77,7 +73,6 @@ export const useSpeechRecognition = () => {
     recognitionRef.current.onend = () => {
       console.log("⏹️ Reconocimiento terminado");
       setIsListening(false);
-      // NO reactivar automáticamente - el usuario controla
     };
 
     try {
@@ -92,20 +87,17 @@ export const useSpeechRecognition = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
-
-      // Limpiar texto temporal
       setTranscript((prev) => prev.replace(/\[.*?\]$/g, "").trim());
     }
   }, []);
 
-  // Limpiar texto temporal cuando se resetea
   const cleanTranscript = useCallback(() => {
     setTranscript((prev) => prev.replace(/\[.*?\]$/g, "").trim());
   }, []);
 
   return {
-    transcript: transcript.replace(/\[.*?\]$/g, "").trim(), // Texto limpio
-    interimTranscript: transcript.match(/\[(.*?)\]$/)?.[1] || "", // Texto temporal actual
+    transcript: transcript.replace(/\[.*?\]$/g, "").trim(),
+    interimTranscript: transcript.match(/\[(.*?)\]$/)?.[1] || "",
     isListening,
     startListening,
     stopListening,
