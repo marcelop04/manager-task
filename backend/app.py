@@ -12,18 +12,19 @@ load_dotenv()
 def create_app():
     app = Flask(__name__)
     
-    # Configuración con asyncpg
-    database_url = os.getenv('DATABASE_URL')
-    
-    # Cambiar a asyncpg driver
-    if database_url and database_url.startswith('postgresql://'):
-        database_url = database_url.replace('postgresql://', 'postgresql+asyncpg://')
+    # CONEXIÓN MANUAL CON SSL FORZADO
+    database_url = "postgresql+pg8000://finanzas_db_5z88_user:CqbMoMD12LCgyzFWJgU2YpzpTDLu2F27@dpg-d3ab5cvdiees73d4cteg-a.virginia-postgres.render.com/finanzas_db_5z88?ssl=true&sslmode=require"
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'pool_recycle': 300,
         'pool_pre_ping': True,
+        'connect_args': {
+            'ssl': True,
+            'sslmode': 'require',
+            'timeout': 10
+        }
     }
     app.config['JSON_SORT_KEYS'] = False
     
