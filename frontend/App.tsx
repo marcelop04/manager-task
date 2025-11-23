@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Link,
 } from "react-router-dom";
 import { Home } from "./pages/Home";
 import { Kanban } from "./pages/Kanban";
@@ -20,15 +21,15 @@ function App() {
             <h1>📋 TaskManager</h1>
           </div>
           <div className="nav-links">
-            <a href="/" className="nav-link">
+            <Link to="/" className="nav-link">
               Inicio
-            </a>
-            <a href="/kanban" className="nav-link">
+            </Link>
+            <Link to="/kanban" className="nav-link">
               Kanban
-            </a>
-            <a href="/dashboard" className="nav-link">
+            </Link>
+            <Link to="/dashboard" className="nav-link">
               Dashboard
-            </a>
+            </Link>
           </div>
         </nav>
 
@@ -37,8 +38,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/kanban" element={<Kanban />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            {/* Redirección para SPA */}
             <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
       </div>

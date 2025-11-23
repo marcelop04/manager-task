@@ -27,44 +27,89 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
 
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    // Detener cualquier reconocimiento previo
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
     recognitionRef.current = new SpeechRecognition();
 
-    // ✅ CAMBIOS IMPORTANTES:
-    recognitionRef.current.continuous = true; // Cambiar a true
-    recognitionRef.current.interimResults = true; // Cambiar a true
+    // CONFIGURACIÓN CORREGIDA:
+    recognitionRef.current.continuous = false; // Cambiar a FALSE
+    recognitionRef.current.interimResults = true; // TRUE para ver resultados mientras hablas
     recognitionRef.current.lang = "es-ES";
+    recognitionRef.current.maxAlternatives = 1;
 
     recognitionRef.current.onstart = () => {
       setIsListening(true);
       setTranscript("");
+      console.log("Comenzando a escuchar...");
     };
 
     recognitionRef.current.onresult = (event: any) => {
+      console.log("Resultado recibido:", event.results);
+
+      let interimTranscript = "";
       let finalTranscript = "";
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
+        const transcriptPart = event.results[i][0].transcript;
+
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + " ";
+          finalTranscript += transcriptPart;
         } else {
-          setTranscript(transcript); // Mostrar resultados intermedios
+          interimTranscript += transcriptPart;
         }
       }
+
+      // Mostrar texto mientras se habla
+      if (interimTranscript) {
+        setTranscript(interimTranscript);
+      }
+
+      // Cuando termina de hablar
       if (finalTranscript) {
-        setTranscript(finalTranscript.trim());
+        setTranscript(finalTranscript);
+        // NO detener automáticamente, dejar que el usuario decida
       }
     };
 
     recognitionRef.current.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
+      console.error("Error de reconocimiento:", event.error);
       setIsListening(false);
+
+      // Reintentar si es un error de red o no speech
+      if (event.error === "network" || event.error === "no-speech") {
+        setTimeout(() => {
+          if (recognitionRef.current) {
+            recognitionRef.current.start();
+          }
+        }, 1000);
+      }
     };
 
     recognitionRef.current.onend = () => {
+      console.log("Reconocimiento terminado");
       setIsListening(false);
+
+      // Reactivar si aún debería estar escuchando
+      if (isListening) {
+        setTimeout(() => {
+          if (recognitionRef.current) {
+            recognitionRef.current.start();
+          }
+        }, 100);
+      }
     };
 
-    recognitionRef.current.start();
-  }, [hasRecognitionSupport]);
+    try {
+      recognitionRef.current.start();
+    } catch (error) {
+      console.error("Error al iniciar reconocimiento:", error);
+      setIsListening(false);
+    }
+  }, [hasRecognitionSupport, isListening]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
