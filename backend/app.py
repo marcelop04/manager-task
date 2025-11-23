@@ -12,18 +12,8 @@ load_dotenv()
 def create_app():
     app = Flask(__name__)
     
-    # Configuración con SSL forzado para PostgreSQL
+    # Configuración DIRECTA sin cambios de URL
     database_url = os.getenv('DATABASE_URL')
-    
-    if database_url and database_url.startswith('postgresql://'):
-        # Agregar parámetros SSL a la conexión
-        if '?' in database_url:
-            database_url += '&sslmode=require'
-        else:
-            database_url += '?sslmode=require'
-        
-        # Usar pg8000 como driver
-        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://')
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -31,7 +21,7 @@ def create_app():
         'pool_recycle': 300,
         'pool_pre_ping': True,
         'connect_args': {
-            'ssl': True
+            'sslmode': 'require'
         }
     }
     app.config['JSON_SORT_KEYS'] = False
@@ -43,7 +33,7 @@ def create_app():
     # Registrar blueprints
     app.register_blueprint(tasks_bp, url_prefix='/api')
     
-    # Health check mejorado
+    # Health check
     @app.route('/health')
     def health():
         try:
@@ -80,8 +70,12 @@ def create_app():
 if __name__ == '__main__':
     app = create_app()
     
-    if os.getenv('FLASK_ENV') == 'development':
+    # Crear tablas si no existen
+    try:
         with app.app_context():
             db.create_all()
+            print("✅ Tablas creadas/existen")
+    except Exception as e:
+        print(f"⚠️ Error creando tablas: {e}")
     
     app.run(debug=os.getenv('FLASK_ENV') == 'development', host='0.0.0.0', port=5000)
