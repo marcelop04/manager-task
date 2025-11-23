@@ -29,8 +29,9 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
       window.SpeechRecognition || window.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
 
-    recognitionRef.current.continuous = false;
-    recognitionRef.current.interimResults = false;
+    // ✅ CAMBIOS IMPORTANTES:
+    recognitionRef.current.continuous = true; // Cambiar a true
+    recognitionRef.current.interimResults = true; // Cambiar a true
     recognitionRef.current.lang = "es-ES";
 
     recognitionRef.current.onstart = () => {
@@ -38,10 +39,19 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
       setTranscript("");
     };
 
-    // CORRECCIÓN: recognitionRef en lugar de recognitionRecognitionRef
     recognitionRef.current.onresult = (event: any) => {
-      const text = event.results[0][0].transcript;
-      setTranscript(text);
+      let finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + " ";
+        } else {
+          setTranscript(transcript); // Mostrar resultados intermedios
+        }
+      }
+      if (finalTranscript) {
+        setTranscript(finalTranscript.trim());
+      }
     };
 
     recognitionRef.current.onerror = (event: any) => {
