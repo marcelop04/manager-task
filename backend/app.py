@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+from sqlalchemy import text  # ← AGREGAR ESTA IMPORTACIÓN
 import os
 import time
 from db import db
@@ -11,7 +12,7 @@ load_dotenv()
 def create_app():
     app = Flask(__name__)
     
-    # Configuración
+    # Configuración (MANTENER pg8000)
     database_url = os.getenv('DATABASE_URL')
     
     # Usar pg8000 como driver de PostgreSQL
@@ -37,8 +38,8 @@ def create_app():
     @app.route('/health')
     def health():
         try:
-            # Intentar conectar a la base de datos
-            db.session.execute('SELECT 1')
+            # Intentar conectar a la base de datos (CORREGIDO)
+            db.session.execute(text('SELECT 1'))  # ← USAR text()
             db_status = 'connected'
         except Exception as e:
             db_status = f'error: {str(e)}'
@@ -54,7 +55,7 @@ def create_app():
     @app.route('/test-db')
     def test_db():
         try:
-            result = db.session.execute('SELECT version()')
+            result = db.session.execute(text('SELECT version()'))  # ← USAR text()
             version = result.scalar()
             return jsonify({
                 'status': 'success',

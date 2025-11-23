@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from sqlalchemy import text
 from db import db
 from models.task import Task
 from schemas.task_schema import TaskSchema, TaskUpdateSchema

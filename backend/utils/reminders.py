@@ -1,4 +1,5 @@
 from datetime import datetime, date, timedelta
+from sqlalchemy import text
 from models.task import Task
 
 def get_overdue_tasks():
@@ -46,8 +47,9 @@ def calculate_task_stats():
     }
     
     # Estadísticas por categoría
+   from sqlalchemy import text
     category_stats = db.session.execute(
-        "SELECT category, COUNT(*) as count FROM tasks WHERE category IS NOT NULL GROUP BY category"
+        text("SELECT category, COUNT(*) as count FROM tasks WHERE category IS NOT NULL GROUP BY category")
     ).fetchall()
     
     by_category = [{'category': row[0], 'count': row[1]} for row in category_stats]
