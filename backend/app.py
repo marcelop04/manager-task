@@ -12,7 +12,7 @@ load_dotenv()
 def create_app():
     app = Flask(__name__)
     
-    # Configuración DIRECTA sin cambios de URL
+    # Configuración DIRECTA - psycopg3 funciona con la URL normal
     database_url = os.getenv('DATABASE_URL')
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
@@ -20,9 +20,6 @@ def create_app():
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'pool_recycle': 300,
         'pool_pre_ping': True,
-        'connect_args': {
-            'sslmode': 'require'
-        }
     }
     app.config['JSON_SORT_KEYS'] = False
     
@@ -70,7 +67,6 @@ def create_app():
 if __name__ == '__main__':
     app = create_app()
     
-    # Crear tablas si no existen
     try:
         with app.app_context():
             db.create_all()
