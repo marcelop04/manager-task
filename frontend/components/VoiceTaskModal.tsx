@@ -99,8 +99,8 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
 
           {transcript && (
             <div className="transcript-preview">
-              <strong>Vista previa:</strong>
-              <div className="preview-text">{transcript}</div>
+              <strong>Vista previa de la tarea:</strong>
+              <div className="preview-text">"{transcript}"</div>
             </div>
           )}
         </div>

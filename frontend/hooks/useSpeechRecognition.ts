@@ -34,28 +34,24 @@ export const useSpeechRecognition = () => {
     recognitionRef.current.onstart = () => {
       console.log("🎤 Escuchando...");
       setIsListening(true);
+      setTranscript(""); // 🔥 LIMPIAR al empezar
     };
 
     recognitionRef.current.onresult = (event: any) => {
       let finalTranscript = "";
-      let interimTranscript = "";
 
+      // 🔥 SOLO CAPTURAR TEXTOS FINALES, ignorar los temporales
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcriptPart = event.results[i][0].transcript;
-
         if (event.results[i].isFinal) {
-          finalTranscript += transcriptPart + " ";
-        } else {
-          interimTranscript += transcriptPart;
+          finalTranscript += event.results[i][0].transcript + " ";
         }
       }
 
       if (finalTranscript) {
-        setTranscript((prev) => prev + finalTranscript);
-      } else if (interimTranscript) {
         setTranscript((prev) => {
-          const baseText = prev.replace(/\[.*?\]$/g, "");
-          return baseText + " [" + interimTranscript + "]";
+          // 🔥 SOLO AGREGAR NUEVOS TEXTOS FINALES, sin duplicar
+          const cleanPrev = prev.replace(/\[.*?\]/g, "").trim();
+          return cleanPrev + " " + finalTranscript.trim();
         });
       }
     };
@@ -87,24 +83,15 @@ export const useSpeechRecognition = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
-      setTranscript((prev) => prev.replace(/\[.*?\]$/g, "").trim());
     }
   }, []);
 
-  const cleanTranscript = useCallback(() => {
-    setTranscript((prev) => prev.replace(/\[.*?\]$/g, "").trim());
-  }, []);
-
   return {
-    transcript: transcript.replace(/\[.*?\]$/g, "").trim(),
-    interimTranscript: transcript.match(/\[(.*?)\]$/)?.[1] || "",
+    transcript: transcript.trim(),
     isListening,
     startListening,
     stopListening,
-    resetTranscript: () => {
-      resetTranscript();
-      cleanTranscript();
-    },
+    resetTranscript,
     hasRecognitionSupport: !!hasRecognitionSupport,
   };
 };
