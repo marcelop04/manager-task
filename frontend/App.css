@@ -140,4 +140,54 @@
     background: #2d3748;
     color: white;
   }
+  .btn-stop {
+    background-color: #e53e3e !important;
+    color: white !important;
+  }
+
+  .btn-stop:hover {
+    background-color: #c53030 !important;
+    transform: translateY(-2px);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #48bb78, #38a169) !important;
+    color: white !important;
+  }
+
+  .btn-success:hover {
+    background: linear-gradient(135deg, #38a169, #2f855a) !important;
+  }
+
+  .transcript-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 8px;
+    border-left: 4px solid #48bb78;
+  }
+
+  .preview-text {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+    font-style: italic;
+  }
+
+  .voice-instructions {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #edf2f7;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  .voice-instructions ol {
+    margin: 0.5rem 0 0 1rem;
+  }
+
+  .voice-instructions li {
+    margin-bottom: 0.25rem;
+  }
 }

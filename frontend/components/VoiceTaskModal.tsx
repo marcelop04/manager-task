@@ -14,6 +14,7 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
 }) => {
   const {
     transcript,
+    interimTranscript,
     isListening,
     startListening,
     stopListening,
@@ -21,19 +22,29 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
     hasRecognitionSupport,
   } = useSpeechRecognition();
 
-  const handleRepeat = () => {
-    resetTranscript();
-    startListening();
+  const handleToggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      resetTranscript();
+      startListening();
+    }
   };
 
   const handleAccept = () => {
     if (transcript.trim()) {
       onConfirm(transcript);
       resetTranscript();
+      onClose();
+    } else {
+      alert("Por favor, habla primero para crear una tarea");
     }
   };
 
   const handleClose = () => {
+    if (isListening) {
+      stopListening();
+    }
     resetTranscript();
     onClose();
   };
@@ -46,7 +57,7 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
         <div className="modal">
           <h2>Crear Tarea por Voz</h2>
           <div className="modal-content">
-            <p>Tu navegador no soporta reconocimiento de voz.</p>
+            <p>🚫 Tu navegador no soporta reconocimiento de voz.</p>
             <p>Por favor, usa Chrome, Edge o Safari.</p>
           </div>
           <div className="modal-actions">
@@ -62,18 +73,19 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
   return (
     <div className="modal-overlay">
       <div className="modal voice-modal">
-        <h2>Crear Tarea por Voz</h2>
+        <h2>🎤 Crear Tarea por Voz</h2>
 
         <div className="modal-content">
           <div className="voice-status">
             {isListening ? (
               <div className="listening-indicator">
                 <div className="pulse"></div>
-                <span>Escuchando... Habla ahora</span>
+                <span>🎤 Escuchando... Habla ahora</span>
+                <small>Presiona "🛑 Parar" cuando termines</small>
               </div>
             ) : (
               <div className="idle-state">
-                <span>Presiona "Comenzar" para hablar</span>
+                <span>Presiona "🎤 Comenzar" para hablar</span>
               </div>
             )}
           </div>
@@ -81,39 +93,57 @@ export const VoiceTaskModal: React.FC<VoiceTaskModalProps> = ({
           <div className="transcript-container">
             <label>Texto reconocido:</label>
             <div className="transcript">
-              {transcript ||
-                (isListening
-                  ? "Escuchando..."
-                  : 'Presiona "Comenzar" para hablar')}
+              {transcript || "Aquí aparecerá tu tarea..."}
+              {interimTranscript && (
+                <span style={{ color: "#666", fontStyle: "italic" }}>
+                  {" " + interimTranscript}
+                </span>
+              )}
             </div>
           </div>
+
+          {transcript && (
+            <div className="transcript-preview">
+              <strong>Vista previa:</strong>
+              <div className="preview-text">{transcript}</div>
+            </div>
+          )}
         </div>
 
         <div className="modal-actions">
           <button onClick={handleClose} className="btn btn-secondary">
-            Volver
+            Cancelar
           </button>
 
-          {!isListening ? (
-            <button onClick={startListening} className="btn btn-primary">
-              🎤 Comenzar
-            </button>
-          ) : (
-            <button onClick={stopListening} className="btn btn-secondary">
-              ⏹️ Detener
-            </button>
-          )}
+          {/* Botón principal que cambia entre Comenzar/Parar */}
+          <button
+            onClick={handleToggleListening}
+            className={`btn ${isListening ? "btn-stop" : "btn-primary"}`}
+            style={{
+              backgroundColor: isListening ? "#e53e3e" : "",
+              color: "white",
+            }}
+          >
+            {isListening ? <>🛑 Parar Grabación</> : <>🎤 Comenzar a Grabar</>}
+          </button>
 
           {transcript && !isListening && (
-            <>
-              <button onClick={handleRepeat} className="btn btn-secondary">
-                🔄 Repetir
-              </button>
-              <button onClick={handleAccept} className="btn btn-primary">
-                ✅ Aceptar
-              </button>
-            </>
+            <button onClick={handleAccept} className="btn btn-success">
+              ✅ Crear Tarea
+            </button>
           )}
+        </div>
+
+        <div className="voice-instructions">
+          <p>
+            <strong>Instrucciones:</strong>
+          </p>
+          <ol>
+            <li>Presiona "🎤 Comenzar a Grabar"</li>
+            <li>Habla claramente tu tarea</li>
+            <li>Presiona "🛑 Parar Grabación" cuando termines</li>
+            <li>Revisa el texto y presiona "✅ Crear Tarea"</li>
+          </ol>
         </div>
       </div>
     </div>
