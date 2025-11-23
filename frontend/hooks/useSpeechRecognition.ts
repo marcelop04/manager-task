@@ -38,7 +38,8 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
       setTranscript("");
     };
 
-    recognitionRecognitionRef.current.onresult = (event: any) => {
+    // CORRECCIÓN: recognitionRef en lugar de recognitionRecognitionRef
+    recognitionRef.current.onresult = (event: any) => {
       const text = event.results[0][0].transcript;
       setTranscript(text);
     };
