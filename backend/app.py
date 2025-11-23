@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
+import time
 from db import db
 from routes.tasks import tasks_bp
 
@@ -13,6 +14,10 @@ def create_app():
     # Configuración
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_recycle': 300,
+        'pool_pre_ping': True
+    }
     app.config['JSON_SORT_KEYS'] = False
     
     # Inicializar extensiones
@@ -22,15 +27,48 @@ def create_app():
     # Registrar blueprints
     app.register_blueprint(tasks_bp, url_prefix='/api')
     
-    # Health check
+    # Health check mejorado
     @app.route('/health')
     def health():
-        return {'status': 'healthy', 'message': 'Task Manager API is running'}
+        try:
+            # Intentar conectar a la base de datos
+            db.session.execute('SELECT 1')
+            db_status = 'connected'
+        except Exception as e:
+            db_status = f'error: {str(e)}'
+        
+        return {
+            'status': 'healthy', 
+            'message': 'Task Manager API is running',
+            'database': db_status,
+            'timestamp': time.time()
+        }
+    
+    # Ruta de prueba de base de datos
+    @app.route('/test-db')
+    def test_db():
+        try:
+            result = db.session.execute('SELECT version()')
+            version = result.scalar()
+            return jsonify({
+                'status': 'success',
+                'database_version': version,
+                'message': 'Conexión a PostgreSQL exitosa'
+            })
+        except Exception as e:
+            return jsonify({
+                'status': 'error',
+                'message': f'Error conectando a PostgreSQL: {str(e)}'
+            }), 500
     
     return app
 
 if __name__ == '__main__':
     app = create_app()
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    
+    # Solo crear tablas si estamos en desarrollo
+    if os.getenv('FLASK_ENV') == 'development':
+        with app.app_context():
+            db.create_all()
+    
+    app.run(debug=os.getenv('FLASK_ENV') == 'development', host='0.0.0.0', port=5000)
