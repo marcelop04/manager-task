@@ -46,8 +46,7 @@ def calculate_task_stats():
         'high': Task.query.filter_by(priority='high').count()
     }
     
-    # Estadísticas por categoría
-   from sqlalchemy import text
+    # Estadísticas por categoría (CORREGIDO con text())
     category_stats = db.session.execute(
         text("SELECT category, COUNT(*) as count FROM tasks WHERE category IS NOT NULL GROUP BY category")
     ).fetchall()
