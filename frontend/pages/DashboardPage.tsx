@@ -22,7 +22,6 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔥 NUEVA FUNCIÓN: Calcular stats desde las tareas
   const calculateStatsFromTasks = async (): Promise<TaskStats> => {
     try {
       const tasks = await taskService.getAllTasks();
@@ -69,13 +68,11 @@ export const DashboardPage: React.FC = () => {
       try {
         setLoading(true);
 
-        // 🔥 INTENTAR PRIMERO EL ENDPOINT DE STATS
         try {
           const data = await taskService.getStats();
           setStats(data);
           setError(null);
         } catch (statsError) {
-          // 🔥 SI FALLA, CALCULAR DESDE LAS TAREAS
           console.warn("Stats endpoint failed, calculating from tasks...");
           const calculatedStats = await calculateStatsFromTasks();
           setStats(calculatedStats);
@@ -125,11 +122,38 @@ export const DashboardPage: React.FC = () => {
     { name: "Baja", value: stats.byPriority.low },
   ];
 
+  // 🔥 CORREGIDO: Mejor formato para el gráfico de estado
   const statusData = [
-    { name: "Pendiente", value: stats.pending },
-    { name: "En Progreso", value: stats.inProgress },
-    { name: "Completada", value: stats.completed },
+    { estado: "Pendiente", cantidad: stats.pending },
+    { estado: "En Progreso", cantidad: stats.inProgress },
+    { estado: "Completada", cantidad: stats.completed },
   ];
+
+  // 🔥 CORREGIDO: Mejor formato para el gráfico de categoría
+  const categoryData = stats.byCategory.map((item) => ({
+    categoría: item.category,
+    tareas: item.count,
+  }));
+
+  // 🔥 Custom Tooltip para los gráficos
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div
+          className="custom-tooltip"
+          style={{
+            backgroundColor: "white",
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+          }}
+        >
+          <p>{`${label}: ${payload[0].value}`}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="dashboard-page">
@@ -203,13 +227,26 @@ export const DashboardPage: React.FC = () => {
         <div className="chart-container">
           <h3>Tareas por Estado</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={statusData}>
+            <BarChart
+              data={statusData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 40 }} // 🔥 Más espacio abajo
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis
+                dataKey="estado"
+                angle={-45} // 🔥 Texto en ángulo
+                textAnchor="end"
+                height={80} // 🔥 Más altura para el texto
+                interval={0} // 🔥 Mostrar todas las etiquetas
+              />
               <YAxis />
-              <Tooltip />
+              <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="value" fill="#8884d8" />
+              <Bar
+                dataKey="cantidad"
+                fill="#8884d8"
+                name="Cantidad de Tareas" // 🔥 Nombre en la leyenda
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -218,13 +255,26 @@ export const DashboardPage: React.FC = () => {
           <div className="chart-container full-width">
             <h3>Tareas por Categoría</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={stats.byCategory}>
+              <BarChart
+                data={categoryData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
+                <XAxis
+                  dataKey="categoría"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  interval={0}
+                />
                 <YAxis />
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Bar dataKey="count" fill="#82ca9d" />
+                <Bar
+                  dataKey="tareas"
+                  fill="#82ca9d"
+                  name="Cantidad de Tareas"
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
