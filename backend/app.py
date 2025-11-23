@@ -12,8 +12,12 @@ load_dotenv()
 def create_app():
     app = Flask(__name__)
     
-    # Configuración DIRECTA - psycopg3 funciona con la URL normal
+    # Configuración con asyncpg
     database_url = os.getenv('DATABASE_URL')
+    
+    # Cambiar a asyncpg driver
+    if database_url and database_url.startswith('postgresql://'):
+        database_url = database_url.replace('postgresql://', 'postgresql+asyncpg://')
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
