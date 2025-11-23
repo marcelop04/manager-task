@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from sqlalchemy import text  # ← AGREGAR ESTA IMPORTACIÓN
+from sqlalchemy import text
 import os
 import time
 from db import db
@@ -12,18 +12,27 @@ load_dotenv()
 def create_app():
     app = Flask(__name__)
     
-    # Configuración (MANTENER pg8000)
+    # Configuración con SSL forzado para PostgreSQL
     database_url = os.getenv('DATABASE_URL')
     
-    # Usar pg8000 como driver de PostgreSQL
     if database_url and database_url.startswith('postgresql://'):
+        # Agregar parámetros SSL a la conexión
+        if '?' in database_url:
+            database_url += '&sslmode=require'
+        else:
+            database_url += '?sslmode=require'
+        
+        # Usar pg8000 como driver
         database_url = database_url.replace('postgresql://', 'postgresql+pg8000://')
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'pool_recycle': 300,
-        'pool_pre_ping': True
+        'pool_pre_ping': True,
+        'connect_args': {
+            'ssl': True
+        }
     }
     app.config['JSON_SORT_KEYS'] = False
     
@@ -38,8 +47,7 @@ def create_app():
     @app.route('/health')
     def health():
         try:
-            # Intentar conectar a la base de datos (CORREGIDO)
-            db.session.execute(text('SELECT 1'))  # ← USAR text()
+            db.session.execute(text('SELECT 1'))
             db_status = 'connected'
         except Exception as e:
             db_status = f'error: {str(e)}'
@@ -51,11 +59,10 @@ def create_app():
             'timestamp': time.time()
         }
     
-    # Ruta de prueba de base de datos
     @app.route('/test-db')
     def test_db():
         try:
-            result = db.session.execute(text('SELECT version()'))  # ← USAR text()
+            result = db.session.execute(text('SELECT version()'))
             version = result.scalar()
             return jsonify({
                 'status': 'success',
@@ -73,7 +80,6 @@ def create_app():
 if __name__ == '__main__':
     app = create_app()
     
-    # Solo crear tablas si estamos en desarrollo
     if os.getenv('FLASK_ENV') == 'development':
         with app.app_context():
             db.create_all()
